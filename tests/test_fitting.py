@@ -222,25 +222,33 @@ class TestFitTsfmValidation:
                 variable_selection="invalid",
             )
 
-    def test_robust_not_implemented(self, synthetic_returns_simple):
-        """Test that Robust method raises NotImplementedError in Phase 1."""
-        with pytest.raises(NotImplementedError, match="Phase 2"):
-            fit_tsfm(
-                data=synthetic_returns_simple,
-                asset_names=["Asset1"],
-                factor_names=["Factor1"],
-                fit_method="Robust",
-            )
+    def test_robust_now_implemented(self, synthetic_returns_simple):
+        """Test that Robust method now works in Phase 2."""
+        # Robust is now implemented
+        model = fit_tsfm(
+            data=synthetic_returns_simple,
+            asset_names=["Asset1"],
+            factor_names=["Factor1"],
+            fit_method="Robust",
+        )
 
-    def test_stepwise_not_implemented(self, synthetic_returns_simple):
-        """Test that stepwise selection raises NotImplementedError in Phase 1."""
-        with pytest.raises(NotImplementedError, match="Phase 2"):
-            fit_tsfm(
-                data=synthetic_returns_simple,
-                asset_names=["Asset1"],
-                factor_names=["Factor1"],
-                variable_selection="stepwise",
-            )
+        # Model should fit successfully
+        assert model.fit_method == "Robust"
+        assert model.r_squared[0] > 0
+
+    def test_stepwise_now_implemented(self, synthetic_returns_simple):
+        """Test that stepwise selection now works in Phase 2."""
+        # Stepwise is now implemented
+        model = fit_tsfm(
+            data=synthetic_returns_simple,
+            asset_names=["Asset1"],
+            factor_names=["Factor1"],
+            variable_selection="stepwise",
+        )
+
+        # Model should fit successfully
+        assert model.variable_selection == "stepwise"
+        assert model.r_squared[0] > 0
 
     def test_missing_columns(self, synthetic_returns_simple):
         """Test that missing columns raise ValueError."""

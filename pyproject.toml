@@ -1,13 +1,31 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "facmodts"
 version = "0.1.0"
 description = "Time series factor models for robust portfolio construction and risk analysis"
-authors = [
-    {name = "Python Conversion Team"}
-]
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "GPL-3.0"}
+authors = [
+    {name = "Drew Hayes", email = "dru.hayes@gmail.com"},
+]
+keywords = ["finance", "factor-models", "time-series", "risk-analysis", "quantitative-finance"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business :: Financial",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
 
 dependencies = [
     "numpy>=1.24.0",
@@ -37,9 +55,11 @@ dev = [
     "mypy>=1.5.0",
 ]
 
-[build-system]
-requires = ["setuptools>=68.0.0", "wheel"]
-build-backend = "setuptools.build_meta"
+[project.urls]
+Homepage = "https://github.com/Druhayes/facmodts"
+Documentation = "https://github.com/Druhayes/facmodts#readme"
+Repository = "https://github.com/Druhayes/facmodts"
+"Bug Tracker" = "https://github.com/Druhayes/facmodts/issues"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

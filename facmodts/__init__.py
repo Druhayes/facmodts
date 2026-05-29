@@ -3,7 +3,7 @@ facmodts: Time Series Factor Models for Portfolio Construction and Risk Analysis
 
 Python implementation of the facmodTS R package for fitting time series factor models
 using robust methods. Companion package to "Robust Portfolio Construction and Risk Analysis"
-by Martin, Philips, Stoyanov, Scherer, and Li (Springer, 2025).
+(Springer, 2025).
 
 Main Functions:
     fit_tsfm: Fit time series factor model using LS, DLS, or Robust regression
@@ -48,6 +48,34 @@ from .control import fit_tsfm_control
 # Data models
 from .models import TsfmModel, TsfmControl, TsfmUpDn
 
+# Robust regression
+from .robust import fit_rlm, get_robust_norm, compute_robust_scale, robust_r_squared
+
+# Variable selection
+from .variable_selection import select_stepwise, select_all_subsets, select_lars
+
+# Risk decomposition
+from .decomposition import fm_cov, fm_sd_decomp, fm_var_decomp, fm_es_decomp
+
+# Wrappers
+from .wrappers import fit_tsfm_mt, fit_tsfm_up_dn, fit_ff3_model, fit_ff4_model
+
+# Performance attribution
+from .performance import pa_fm, PaFm
+
+# Reporting
+from .reporting import (
+    summary_tsfm,
+    print_summary_tsfm,
+    print_tsfm,
+    predict_tsfm,
+    print_pafm,
+    summary_pafm,
+)
+
+# Plotting
+from .plotting import plot_tsfm, plot_pafm, plot_tsfm_updn
+
 # Utilities
 from .utils import (
     make_syntactically_valid,
@@ -63,6 +91,39 @@ __all__ = [
     "TsfmModel",
     "TsfmControl",
     "TsfmUpDn",
+    "PaFm",
+    # Robust regression
+    "fit_rlm",
+    "get_robust_norm",
+    "compute_robust_scale",
+    "robust_r_squared",
+    # Variable selection
+    "select_stepwise",
+    "select_all_subsets",
+    "select_lars",
+    # Risk decomposition
+    "fm_cov",
+    "fm_sd_decomp",
+    "fm_var_decomp",
+    "fm_es_decomp",
+    # Wrappers
+    "fit_tsfm_mt",
+    "fit_tsfm_up_dn",
+    "fit_ff3_model",
+    "fit_ff4_model",
+    # Performance attribution
+    "pa_fm",
+    # Reporting
+    "summary_tsfm",
+    "print_summary_tsfm",
+    "print_tsfm",
+    "predict_tsfm",
+    "print_pafm",
+    "summary_pafm",
+    # Plotting
+    "plot_tsfm",
+    "plot_pafm",
+    "plot_tsfm_updn",
     # Utilities
     "make_syntactically_valid",
     "compute_excess_returns",
@@ -72,28 +133,33 @@ __all__ = [
 # Phase implementation status
 _PHASE_STATUS = {
     "Phase 1": {
-        "status": "In Progress",
+        "status": "Complete",
         "features": ["LS regression", "DLS regression", "Basic fitting"],
         "completed": ["Data models", "Control parameters", "Utilities"],
     },
     "Phase 2": {
-        "status": "Planned",
+        "status": "Complete",
         "features": ["Robust regression", "Variable selection (stepwise, subsets, LARS)"],
+        "completed": ["M-estimators", "Stepwise selection", "Best subsets", "LARS/Lasso"],
     },
     "Phase 3": {
-        "status": "Planned",
+        "status": "Complete",
         "features": ["Risk decomposition (SD, VaR, ES)", "Factor model covariance"],
+        "completed": ["fm_cov", "fm_sd_decomp", "fm_var_decomp", "fm_es_decomp"],
     },
     "Phase 4": {
-        "status": "Planned",
+        "status": "Complete",
         "features": ["Wrapper functions (MT, UpDn, FF models)"],
+        "completed": ["fit_tsfm_mt", "fit_tsfm_up_dn", "fit_ff3_model", "fit_ff4_model"],
     },
     "Phase 5": {
-        "status": "Planned",
+        "status": "Complete",
         "features": ["Performance attribution", "Summary methods"],
+        "completed": ["pa_fm", "summary_tsfm", "print_tsfm", "predict_tsfm", "summary_pafm", "print_pafm"],
     },
     "Phase 6": {
-        "status": "Planned",
+        "status": "In Progress",
         "features": ["Visualization", "Comprehensive testing"],
+        "completed": ["plot_tsfm", "plot_pafm", "plot_tsfm_updn"],
     },
 }

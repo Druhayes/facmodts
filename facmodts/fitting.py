@@ -15,6 +15,7 @@ from statsmodels.regression.linear_model import OLS, WLS
 
 from .control import fit_tsfm_control
 from .models import TsfmControl, TsfmModel
+from .robust import fit_rlm, robust_r_squared
 from .utils import (
     compute_dls_weights,
     compute_excess_returns,
@@ -22,6 +23,7 @@ from .utils import (
     remove_incomplete_cases,
     validate_column_names,
 )
+from .variable_selection import select_all_subsets, select_lars, select_stepwise
 
 
 def fit_tsfm(
@@ -135,22 +137,21 @@ def fit_tsfm(
             f"got '{variable_selection}'"
         )
 
-    # Phase 1: Only support LS, DLS, and variable_selection="none"
-    if fit_method == "Robust":
-        raise NotImplementedError(
-            "Robust regression will be implemented in Phase 2. "
-            "Use fit_method='LS' or 'DLS' for now."
-        )
-
-    if variable_selection != "none":
-        raise NotImplementedError(
-            f"Variable selection '{variable_selection}' will be implemented in Phase 2. "
-            "Use variable_selection='none' for now."
-        )
-
     # Create control object if not provided
     if control is None:
         control = fit_tsfm_control(**kwargs)
+
+    # Robust regression is now available in Phase 2
+    if fit_method == "Robust":
+        # Validate control parameters for robust
+        if control.family not in ["bisquare", "huber", "hampel", "andrews"]:
+            raise ValueError(
+                f"Invalid robust family '{control.family}'. "
+                "Options: 'bisquare', 'huber', 'hampel', 'andrews'"
+            )
+
+    # Variable selection is now available in Phase 2
+    # Note: LARS ignores fit_method and uses its own algorithm
 
     # Convert data to Polars DataFrame
     if isinstance(data, pd.DataFrame):
@@ -193,58 +194,125 @@ def fit_tsfm(
             dat_pl, asset_names, factor_names, fit_method, control
         )
     elif variable_selection == "stepwise":
-        # Phase 2 implementation
-        raise NotImplementedError("Stepwise selection in Phase 2")
+        reg_list = select_stepwise(
+            dat_pl, asset_names, factor_names, fit_method,
+            decay=control.decay,
+            direction=control.step_direction,
+            criterion=control.step_criterion,
+            family=control.family,
+            tuning_psi=control.tuning_psi,
+            max_it=control.max_it,
+            rel_tol=control.rel_tol
+        )
     elif variable_selection == "subsets":
-        # Phase 2 implementation
-        raise NotImplementedError("Subsets selection in Phase 2")
+        reg_list = select_all_subsets(
+            dat_pl, asset_names, factor_names, fit_method,
+            decay=control.decay,
+            nvmin=control.nvmin,
+            nvmax=control.nvmax,
+            family=control.family,
+            tuning_psi=control.tuning_psi,
+            max_it=control.max_it,
+            rel_tol=control.rel_tol
+        )
     elif variable_selection == "lars":
-        # Phase 2/4 implementation
-        raise NotImplementedError("LARS selection in Phase 2")
+        # LARS ignores fit_method and uses its own algorithm
+        asset_fit_lars, alpha, beta, r_squared, resid_sd = select_lars(
+            dat_pl, asset_names, factor_names,
+            lars_criterion=control.lars_criterion,
+            cv_folds=control.lars_cv_folds
+        )
+        # For LARS, we need to handle return values differently
+        # since it computes coefficients directly
+        reg_list = asset_fit_lars
+        # Skip the extraction loop below for LARS
+        _lars_special_case = True
     else:
         raise ValueError(f"Unknown variable_selection: {variable_selection}")
 
     # Extract coefficients, statistics from fitted models
-    alpha_dict = {}
-    beta_dict = {}
-    r2_dict = {}
-    resid_sd_dict = {}
-    residuals_dict = {}
+    # Special handling for LARS which computes coefficients directly
+    if variable_selection == "lars":
+        # LARS already computed alpha, beta, r_squared, resid_sd
+        # Just need to compute residuals
+        residuals_dict = {}
+        for i, asset in enumerate(asset_names):
+            if asset in reg_list:
+                # Get data for this asset
+                reg_pl = remove_incomplete_cases(dat_pl, asset, factor_names)
+                reg_pd = reg_pl.to_pandas()
+                y_actual = reg_pd[asset].values
 
-    for asset in asset_names:
-        if asset not in reg_list:
-            continue
+                # Predict using LARS model
+                X = reg_pd[factor_names].values
+                y_pred = reg_list[asset].predict(X)
+                residuals_dict[asset] = y_actual - y_pred
+    else:
+        # Standard extraction for other methods
+        alpha_dict = {}
+        beta_dict = {}
+        r2_dict = {}
+        resid_sd_dict = {}
+        residuals_dict = {}
 
-        fit_obj = reg_list[asset]
+        for asset in asset_names:
+            if asset not in reg_list:
+                continue
 
-        # Extract coefficients
-        params = fit_obj.params
-        alpha_dict[asset] = params[0]  # Intercept
-        beta_dict[asset] = params[1:]  # Factor loadings (already numpy array)
+            fit_obj = reg_list[asset]
 
-        # Extract R-squared
-        r2_dict[asset] = fit_obj.rsquared
+            # Extract coefficients
+            params = fit_obj.params
+            alpha_dict[asset] = params[0]  # Intercept
 
-        # Extract residual standard deviation
-        if fit_method == "DLS":
-            # For DLS, compute unweighted residual SD
-            resid_sd_dict[asset] = np.std(fit_obj.resid, ddof=fit_obj.df_model + 1)
-        else:
-            resid_sd_dict[asset] = np.sqrt(fit_obj.scale)  # statsmodels sigma
+            # Handle selected factors from variable selection
+            if variable_selection in ["stepwise", "subsets"] and hasattr(fit_obj, 'selected_factors'):
+                # Need to map selected factors to full beta vector
+                beta_full = np.zeros(len(factor_names))
+                selected_factors = fit_obj.selected_factors
+                for j, factor in enumerate(selected_factors):
+                    factor_idx = factor_names.index(factor)
+                    beta_full[factor_idx] = params[j + 1]  # +1 for intercept
+                beta_dict[asset] = beta_full
+            else:
+                beta_dict[asset] = params[1:]  # Factor loadings (already numpy array)
 
-        # Extract residuals
-        residuals_dict[asset] = fit_obj.resid  # Already numpy array
+            # Extract R-squared
+            if fit_method == "Robust":
+                # RLM doesn't have rsquared, compute robust R²
+                r2_dict[asset] = robust_r_squared(
+                    fit_obj.model.endog,
+                    fit_obj.fittedvalues,
+                    fit_obj.resid
+                )
+            else:
+                r2_dict[asset] = fit_obj.rsquared
+
+            # Extract residual standard deviation
+            if fit_method == "DLS":
+                # For DLS, compute unweighted residual SD
+                resid_sd_dict[asset] = np.std(fit_obj.resid, ddof=fit_obj.df_model + 1)
+            else:
+                resid_sd_dict[asset] = np.sqrt(fit_obj.scale)  # statsmodels sigma
+
+            # Extract residuals
+            residuals_dict[asset] = fit_obj.resid  # Already numpy array
 
     # Convert dictionaries to arrays
     n_assets = len(asset_names)
     n_factors = len(factor_names)
 
-    alpha = np.array([alpha_dict.get(asset, np.nan) for asset in asset_names])
-    beta = np.array(
-        [beta_dict.get(asset, np.full(n_factors, np.nan)) for asset in asset_names]
-    )
-    r_squared = np.array([r2_dict.get(asset, np.nan) for asset in asset_names])
-    resid_sd = np.array([resid_sd_dict.get(asset, np.nan) for asset in asset_names])
+    if variable_selection == "lars":
+        # LARS already computed these as arrays
+        # alpha, beta, r_squared, resid_sd already set
+        pass
+    else:
+        alpha = np.array([alpha_dict.get(asset, np.nan) for asset in asset_names])
+        beta = np.array(
+            [beta_dict.get(asset, np.full(n_factors, np.nan)) for asset in asset_names]
+        )
+        r_squared = np.array([r2_dict.get(asset, np.nan) for asset in asset_names])
+        resid_sd = np.array([resid_sd_dict.get(asset, np.nan) for asset in asset_names])
 
     # Build residuals matrix (N x T)
     # Get maximum number of observations across all assets
@@ -349,8 +417,15 @@ def _no_variable_selection(
             fit_obj = model.fit()
 
         elif fit_method == "Robust":
-            # Phase 2: Use statsmodels RLM
-            raise NotImplementedError("Robust regression in Phase 2")
+            # Use statsmodels RLM with M-estimators
+            fit_obj = fit_rlm(
+                y,
+                X_with_const,
+                family=control.family,
+                tuning_constant=control.tuning_psi,
+                max_iter=control.max_it,
+                tol=control.rel_tol
+            )
 
         else:
             raise ValueError(f"Unknown fit_method: {fit_method}")

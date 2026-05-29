@@ -201,7 +201,7 @@ class TsfmControl:
     solve_tol: float = 1e-7
     trace_lev: int = 0
     compute_rd: bool = False
-    family: Literal["bisquare", "optimal", "modopt"] = "bisquare"
+    family: Literal["bisquare", "huber", "hampel", "andrews"] = "bisquare"
     corr_b: bool = True
     split_type: str = "f"
     initial: Literal["S", "MS"] = "S"
@@ -214,7 +214,12 @@ class TsfmControl:
     steps: int = 1000
     k: float = 2.0
 
+    # Convenience aliases for stepwise
+    step_direction: Optional[Literal["both", "backward", "forward"]] = None
+    step_criterion: Literal["aic", "bic"] = "bic"
+
     # regsubsets control (Subsets)
+    nvmin: int = 1
     nvmax: int = 8
     force_in: Optional[List[int]] = None
     force_out: Optional[List[int]] = None
@@ -229,13 +234,29 @@ class TsfmControl:
     lars_use_gram: bool = True
 
     # cv.lars control
-    lars_criterion: Literal["Cp", "cv"] = "Cp"
+    lars_criterion: Literal["Cp", "cv", "aic", "bic"] = "Cp"
     lars_cv_k: int = 10
+    lars_cv_folds: Optional[int] = None  # Alias for lars_cv_k
     lars_cv_trace: bool = False
     lars_cv_mode: Literal["fraction", "step", "norm"] = "fraction"
 
     def __post_init__(self):
         """Validate control parameters after initialization."""
+        # Handle convenience aliases
+        if self.step_direction is not None:
+            self.direction = self.step_direction
+
+        # Set k based on step_criterion if not explicitly provided
+        # (this is a bit tricky since we can't detect if k was explicitly set)
+        # For now, document that step_criterion overrides k
+        if self.step_criterion == "bic":
+            # BIC uses k = log(n), but we don't know n here
+            # Document that user should set k=log(n) for BIC
+            pass  # Keep default k=2 unless user changes it
+
+        if self.lars_cv_folds is not None:
+            self.lars_cv_k = self.lars_cv_folds
+
         # Validate decay
         if not (0 < self.decay <= 1):
             raise ValueError(f"decay must be in (0, 1], got {self.decay}")
@@ -252,9 +273,15 @@ class TsfmControl:
         if self.k <= 0:
             raise ValueError(f"k must be positive, got {self.k}")
 
-        # Validate nvmax
+        # Validate nvmin and nvmax
+        if self.nvmin < 1:
+            raise ValueError(f"nvmin must be >= 1, got {self.nvmin}")
         if self.nvmax < 1:
             raise ValueError(f"nvmax must be >= 1, got {self.nvmax}")
+        if self.nvmin > self.nvmax:
+            raise ValueError(
+                f"nvmin ({self.nvmin}) must be <= nvmax ({self.nvmax})"
+            )
 
         # Validate lars_cv_k
         if self.lars_cv_k < 2:

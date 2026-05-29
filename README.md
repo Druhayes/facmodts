@@ -1,6 +1,6 @@
 # facmodts_py: Time Series Factor Models in Python
 
-Python implementation of the facmodTS R package for fitting time series factor models using robust methods. Companion to *Robust Portfolio Construction and Risk Analysis* by Martin, Philips, Stoyanov, Scherer, and Li (Springer, 2025).
+Python implementation of the facmodTS R package for fitting time series factor models using robust methods. Companion to *Robust Portfolio Construction and Risk Analysis* (Springer, 2025).
 
 ## Implementation Status
 
@@ -188,8 +188,8 @@ GPL-3.0 (same as R package)
 
 ## Authors
 
-Python conversion team based on the original R package by Eric Zivot, Sangeetha Srinivasan, and Yi-An Chen.
+Python conversion team, based on the original facmodTS R package.
 
 ## References
 
-Martin, R. D., Philips, T. K., Stoyanov, S., Scherer, B., & Li, K. (2025). *Robust Portfolio Construction and Risk Analysis*. Springer.
+*Robust Portfolio Construction and Risk Analysis* (2025). Springer.
