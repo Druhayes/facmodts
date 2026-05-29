@@ -14,7 +14,7 @@ authors = [
 ]
 keywords = ["finance", "factor-models", "time-series", "risk-analysis", "quantitative-finance"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Financial and Insurance Industry",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
