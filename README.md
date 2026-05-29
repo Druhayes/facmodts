@@ -4,61 +4,63 @@ Python implementation of the facmodTS R package for fitting time series factor m
 
 ## Implementation Status
 
-**Current Phase**: Phase 1 - Foundation & Core Fitting (In Progress)
+All planned phases are implemented and covered by the test suite (202 passing,
+7 R-comparison tests skipped unless R/rpy2 is available).
 
-### Phase 1: Foundation & Core Fitting ✅ (Partial)
+### Phase 1: Foundation & Core Fitting ✅
 
-**Completed**:
 - ✅ Data models (TsfmModel, TsfmControl, TsfmUpDn)
 - ✅ Control parameter handling (fit_tsfm_control)
 - ✅ Utility functions (DLS weights, excess returns, NA handling)
 - ✅ LS (Ordinary Least Squares) regression
 - ✅ DLS (Discounted Least Squares) regression
 - ✅ Test infrastructure (fixtures, tolerances, synthetic data)
-- ✅ Basic unit tests (25+ tests)
 
-**In Progress**:
-- R comparison tests
-- Additional edge case tests
+### Phase 2: Robust Regression & Variable Selection ✅
 
-**Remaining**:
-- Comprehensive documentation
-- Performance benchmarking
+- ✅ Robust regression (M-estimators via statsmodels RLM)
+- ✅ Stepwise variable selection
+- ✅ Best subsets variable selection
+- ✅ LARS/Lasso variable selection
 
-### Phase 2: Robust Regression & Variable Selection (Planned)
+### Phase 3: Risk Decomposition ✅
 
-- Robust regression (M-estimators via statsmodels RLM)
-- Stepwise variable selection
-- Best subsets variable selection
-- LARS/Lasso variable selection
+- ✅ Factor model covariance (fm_cov)
+- ✅ SD decomposition (fm_sd_decomp)
+- ✅ VaR decomposition (fm_var_decomp)
+- ✅ ES decomposition (fm_es_decomp)
 
-### Phase 3: Risk Decomposition (Planned)
+### Phase 4: Wrapper Functions ✅
 
-- Factor model covariance (fm_cov)
-- SD decomposition (fm_sd_decomp)
-- VaR decomposition (fm_var_decomp)
-- ES decomposition (fm_es_decomp)
+- ✅ Market-timing models (fit_tsfm_mt)
+- ✅ Up/Down market models (fit_tsfm_up_dn)
+- ✅ Fama-French wrappers (FF3, FF4)
+- ⬜ Lag/Lead beta models (not yet implemented)
 
-### Phase 4: Wrapper Functions (Planned)
+### Phase 5: Performance Attribution ✅
 
-- Market-timing models (fit_tsfm_mt)
-- Up/Down market models (fit_tsfm_up_dn)
-- Lag/Lead beta models
-- Fama-French wrappers (FF3, FF4)
+- ✅ Performance attribution (pa_fm)
+- ✅ Summary methods
+- ✅ Print methods
+- ✅ Predict methods
 
-### Phase 5: Performance Attribution (Planned)
+### Phase 6: Visualization ✅
 
-- Performance attribution (pa_fm)
-- Summary methods
-- Print methods
-- Predict methods
-
-### Phase 6: Visualization (Planned)
-
-- Comprehensive plotting suite (12+ plot types)
-- Matplotlib and Plotly support
+- ✅ Comprehensive plotting suite
+- ✅ Matplotlib and Plotly support
 
 ## Installation
+
+```bash
+# From PyPI
+pip install facmodts
+
+# With optional plotting / test dependencies
+pip install "facmodts[plot]"
+pip install "facmodts[test]"
+```
+
+For local development:
 
 ```bash
 # Using UV (recommended)
